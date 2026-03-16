@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "sqlm",
+  "scopeName": "source.sqlm",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#sqlm-keywords" },
+    { "include": "#sql-keywords" },
+    { "include": "#dollar-quote" },
+    { "include": "#strings" },
+    { "include": "#types" }
+  ],
+  "repository": {
+    "comments": {
+      "match": "--.*$",
+      "name": "comment.line.double-dash.sqlm"
+    },
+    "sqlm-keywords": {
+      "match": "\\b(package|import|func|init)\\b",
+      "name": "keyword.control.sqlm"
+    },
+    "sql-keywords": {
+      "match": "(?i)\\b(CREATE|OR|REPLACE|DROP|TYPE|FUNCTION|SCHEMA|TABLE|IF|EXISTS|NOT|AS|RETURNS|RETURN|DECLARE|BEGIN|END|LANGUAGE|PLPGSQL|SETOF|QUERY|SELECT|INSERT|UPDATE|DELETE|INTO|FROM|WHERE|VALUES|RETURNING|SET|COALESCE|NOW|ORDER|BY|LIMIT|OFFSET|DESC|ASC|AND|OR|IN|IS|NULL|DEFAULT|UNIQUE|PRIMARY|KEY|REFERENCES|INDEX|TRIGGER|VIEW|SECURITY|DEFINER|INVOKER|STABLE|VOLATILE|IMMUTABLE|STRICT)\\b",
+      "name": "keyword.other.sql.sqlm"
+    },
+    "dollar-quote": {
+      "begin": "\\$\\$",
+      "end": "\\$\\$",
+      "name": "string.other.dollar-quote.sqlm",
+      "patterns": [
+        { "include": "#sql-keywords" }
+      ]
+    },
+    "strings": {
+      "match": "'[^']*'",
+      "name": "string.quoted.single.sqlm"
+    },
+    "types": {
+      "match": "\\b(TEXT|UUID|INTEGER|INT|BOOLEAN|BOOL|TIMESTAMPTZ|TIMESTAMP|JSONB|JSON|NUMERIC|BIGINT|SMALLINT|FLOAT|REAL|BYTEA|VOID)\\b",
+      "name": "support.type.sql.sqlm"
+    }
+  }
+}

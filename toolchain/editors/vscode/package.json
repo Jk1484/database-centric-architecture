@@ -1,0 +1,63 @@
+{
+  "name": "sqlm",
+  "displayName": "sqlm — Modular SQL",
+  "description": "Language support for .sqlm files",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "sqlm",
+        "aliases": [
+          "Modular SQL",
+          "sqlm"
+        ],
+        "extensions": [
+          ".sqlm"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sqlm",
+        "scopeName": "source.sqlm",
+        "path": "./syntaxes/sqlm.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "sqlm",
+      "properties": {
+        "sqlm.serverPath": {
+          "type": "string",
+          "default": "sqlm",
+          "description": "Path to the sqlm binary. Defaults to 'sqlm' on PATH."
+        },
+        "sqlm.entitiesDir": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the entities directory. Auto-detected if empty."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
