@@ -2,6 +2,7 @@ package index
 
 import (
 	"bufio"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sqlm/internal/parser"
@@ -24,8 +25,8 @@ type Symbol struct {
 
 // Index holds all symbols and their references across a set of files.
 type Index struct {
-	Definitions map[string]*Symbol     // qualified name → symbol
-	References  map[string][]Location  // qualified name → all usage locations
+	Definitions map[string]*Symbol    // qualified name → symbol
+	References  map[string][]Location // qualified name → all usage locations
 }
 
 var (
@@ -35,6 +36,7 @@ var (
 )
 
 // Build constructs an index from a set of parsed files.
+// It reads raw file content for accurate line numbers.
 func Build(files []*parser.File) *Index {
 	idx := &Index{
 		Definitions: make(map[string]*Symbol),
@@ -42,7 +44,7 @@ func Build(files []*parser.File) *Index {
 	}
 
 	for _, f := range files {
-		scanFile(idx, f)
+		scanRawFile(idx, f.Path)
 	}
 
 	return idx
@@ -69,74 +71,74 @@ func BuildFromDir(entitiesDir string) (*Index, error) {
 	return Build(files), nil
 }
 
-func scanFile(idx *Index, f *parser.File) {
-	// scan init bodies and SQL body together
-	var sources []string
-	sources = append(sources, f.Inits...)
-	if f.Body != "" {
-		sources = append(sources, f.Body)
+// scanRawFile scans a raw .sqlm file line by line for definitions and references.
+// Reading the raw file ensures line numbers match what the editor sees.
+func scanRawFile(idx *Index, path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return
 	}
+	defer f.Close()
 
-	for _, src := range sources {
-		scanDefinitions(idx, f.Path, src)
-	}
-	for _, src := range sources {
-		scanReferences(idx, f.Path, src)
-	}
-}
-
-func scanDefinitions(idx *Index, path, src string) {
-	scanner := bufio.NewScanner(strings.NewReader(src))
-	line := 0
+	var lines []string
+	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		text := scanner.Text()
+		lines = append(lines, scanner.Text())
+	}
 
+	// first pass: collect definitions
+	for lineNum, text := range lines {
 		if m := reType.FindStringSubmatchIndex(text); m != nil {
 			name := text[m[2]:m[3]]
 			idx.Definitions[name] = &Symbol{
 				Name: name,
 				Kind: "type",
-				Location: Location{
-					Path:   path,
-					Line:   line,
-					Column: m[2],
-				},
+				Location: Location{Path: path, Line: lineNum, Column: m[2]},
 			}
 		}
-
 		if m := reFunction.FindStringSubmatchIndex(text); m != nil {
 			name := text[m[2]:m[3]]
 			idx.Definitions[name] = &Symbol{
 				Name: name,
 				Kind: "function",
-				Location: Location{
-					Path:   path,
-					Line:   line,
-					Column: m[2],
-				},
+				Location: Location{Path: path, Line: lineNum, Column: m[2]},
 			}
 		}
-
-		line++
 	}
-}
 
-func scanReferences(idx *Index, path, src string) {
-	scanner := bufio.NewScanner(strings.NewReader(src))
-	line := 0
-	for scanner.Scan() {
-		text := scanner.Text()
-		matches := reIdent.FindAllStringSubmatchIndex(text, -1)
-		for _, m := range matches {
+	// second pass: collect references
+	for lineNum, text := range lines {
+		for _, m := range reIdent.FindAllStringSubmatchIndex(text, -1) {
 			name := text[m[2]:m[3]]
 			if _, isDef := idx.Definitions[name]; isDef {
+				// skip if this position IS the definition line and column
+				if sym := idx.Definitions[name]; sym.Location.Path == path && sym.Location.Line == lineNum && sym.Location.Column == m[2] {
+					continue
+				}
 				idx.References[name] = append(idx.References[name], Location{
 					Path:   path,
-					Line:   line,
+					Line:   lineNum,
 					Column: m[2],
 				})
 			}
 		}
-		line++
 	}
+
+	// deduplicate references
+	for name, refs := range idx.References {
+		idx.References[name] = dedupLocations(refs)
+	}
+}
+
+func dedupLocations(locs []Location) []Location {
+	seen := make(map[string]bool)
+	var result []Location
+	for _, loc := range locs {
+		key := strings.Join([]string{loc.Path, string(rune(loc.Line)), string(rune(loc.Column))}, ":")
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, loc)
+		}
+	}
+	return result
 }

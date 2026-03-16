@@ -41,8 +41,9 @@ func (h *Handler) Handle(msg map[string]json.RawMessage) any {
 			},
 		})
 
-	case "initialized", "$/cancelRequest":
-		return nil // notifications, no response
+	case "initialized", "$/cancelRequest", "textDocument/didOpen",
+		"textDocument/didChange", "textDocument/didClose":
+		return nil // notifications — no id, no response
 
 	case "shutdown":
 		return response(id, nil)
@@ -66,6 +67,10 @@ func (h *Handler) Handle(msg map[string]json.RawMessage) any {
 		return response(id, h.hover(params))
 	}
 
+	// unknown method — if it has an id it's a request and needs a response
+	if id != nil {
+		return response(id, nil)
+	}
 	return nil
 }
 

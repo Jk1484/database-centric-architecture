@@ -1,2 +1,5 @@
 toolchain/sqlm
 migrations/entities/out.sql
+toolchain/editors/vscode/node_modules/
+toolchain/editors/vscode/out/
+toolchain/editors/vscode/*.vsix
