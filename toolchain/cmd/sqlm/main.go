@@ -5,6 +5,7 @@ import (
 	"os"
 	"sqlm/internal/compiler"
 	"sqlm/internal/linter"
+	"sqlm/internal/lsp"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	case "lint":
 		cmdLint()
 	case "lsp":
-		fmt.Println("lsp: not yet implemented")
+		cmdLSP()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		os.Exit(1)
@@ -69,4 +70,22 @@ func cmdLint() {
 		fmt.Println(issue)
 	}
 	os.Exit(1)
+}
+
+// cmdLSP starts the language server, reading from stdin and writing to stdout.
+// Usage: sqlm lsp <entities-dir>
+func cmdLSP() {
+	if len(os.Args) < 3 {
+		fmt.Fprintln(os.Stderr, "usage: sqlm lsp <entities-dir>")
+		os.Exit(1)
+	}
+	entitiesDir := os.Args[2]
+
+	server, err := lsp.NewServer(entitiesDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "lsp failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	server.Run()
 }
