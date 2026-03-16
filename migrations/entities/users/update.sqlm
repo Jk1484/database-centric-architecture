@@ -1,0 +1,39 @@
+package users
+
+func init() {
+    DROP FUNCTION IF EXISTS users.update(users.update_request);
+    DROP TYPE IF EXISTS users.update_request;
+    DROP TYPE IF EXISTS users.update_response;
+}
+
+CREATE TYPE users.update_request AS (
+    id    UUID,
+    name  TEXT,
+    email TEXT
+);
+
+CREATE TYPE users.update_response AS (
+    id         UUID,
+    name       TEXT,
+    email      TEXT,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION users.update(req users.update_request)
+RETURNS users.update_response AS $$
+DECLARE
+    result users.update_response;
+BEGIN
+    UPDATE public.users
+    SET
+        name       = COALESCE(req.name, name),
+        email      = COALESCE(req.email, email),
+        updated_at = NOW()
+    WHERE id = req.id
+    RETURNING id, name, email, created_at, updated_at
+    INTO result.id, result.name, result.email, result.created_at, result.updated_at;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;

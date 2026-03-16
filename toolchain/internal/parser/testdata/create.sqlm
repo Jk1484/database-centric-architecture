@@ -1,0 +1,36 @@
+package users
+
+import "queries"
+
+func init() {
+    DROP FUNCTION IF EXISTS users.create(users.create_request);
+    DROP TYPE IF EXISTS users.create_request;
+    DROP TYPE IF EXISTS users.create_response;
+}
+
+CREATE TYPE users.create_request AS (
+    name  TEXT,
+    email TEXT
+);
+
+CREATE TYPE users.create_response AS (
+    id         UUID,
+    name       TEXT,
+    email      TEXT,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION users.create(req users.create_request)
+RETURNS users.create_response AS $$
+DECLARE
+    result users.create_response;
+BEGIN
+    INSERT INTO public.users (name, email)
+    VALUES (req.name, req.email)
+    RETURNING id, name, email, created_at, updated_at
+    INTO result.id, result.name, result.email, result.created_at, result.updated_at;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;

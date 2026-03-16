@@ -1,0 +1,32 @@
+package users
+
+func init() {
+    DROP FUNCTION IF EXISTS users.list(users.list_request);
+    DROP TYPE IF EXISTS users.list_request;
+    DROP TYPE IF EXISTS users.list_response;
+}
+
+CREATE TYPE users.list_request AS (
+    page_size   INTEGER,
+    page_offset INTEGER
+);
+
+CREATE TYPE users.list_response AS (
+    id         UUID,
+    name       TEXT,
+    email      TEXT,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
+);
+
+CREATE OR REPLACE FUNCTION users.list(req users.list_request)
+RETURNS SETOF users.list_response AS $$
+BEGIN
+    RETURN QUERY
+    SELECT id, name, email, created_at, updated_at
+    FROM public.users
+    ORDER BY created_at DESC
+    LIMIT  req.page_size
+    OFFSET req.page_offset;
+END;
+$$ LANGUAGE plpgsql;

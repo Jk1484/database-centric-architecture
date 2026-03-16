@@ -1,0 +1,29 @@
+package users
+
+func init() {
+    DROP FUNCTION IF EXISTS users.delete(users.delete_request);
+    DROP TYPE IF EXISTS users.delete_request;
+    DROP TYPE IF EXISTS users.delete_response;
+}
+
+CREATE TYPE users.delete_request AS (
+    id UUID
+);
+
+CREATE TYPE users.delete_response AS (
+    id UUID
+);
+
+CREATE OR REPLACE FUNCTION users.delete(req users.delete_request)
+RETURNS users.delete_response AS $$
+DECLARE
+    result users.delete_response;
+BEGIN
+    DELETE FROM public.users
+    WHERE id = req.id
+    RETURNING id
+    INTO result.id;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
