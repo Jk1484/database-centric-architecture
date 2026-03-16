@@ -70,6 +70,12 @@ func loadPackage(dir, expectedPkg string) ([]*File, error) {
 	return files, nil
 }
 
+// HasPackage reports whether a package with the given name exists in the graph.
+func (g *Graph) HasPackage(name string) bool {
+	_, ok := g.packages[name]
+	return ok
+}
+
 // Resolve traverses the graph from one or more entry packages and returns
 // all files in dependency order. Each package is visited at most once.
 func (g *Graph) Resolve(entryPkgs ...string) ([]*File, error) {

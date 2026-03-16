@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sqlm/internal/compiler"
+	"sqlm/internal/linter"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	case "build":
 		cmdBuild()
 	case "lint":
-		fmt.Println("lint: not yet implemented")
+		cmdLint()
 	case "lsp":
 		fmt.Println("lsp: not yet implemented")
 	default:
@@ -42,4 +43,30 @@ func cmdBuild() {
 	}
 
 	fmt.Printf("compiled %s → %s\n", entitiesDir, outFile)
+}
+
+// cmdLint runs static analysis against the entities directory.
+// Usage: sqlm lint <entities-dir>
+func cmdLint() {
+	if len(os.Args) < 3 {
+		fmt.Fprintln(os.Stderr, "usage: sqlm lint <entities-dir>")
+		os.Exit(1)
+	}
+	entitiesDir := os.Args[2]
+
+	issues, err := linter.Lint(entitiesDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "lint failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(issues) == 0 {
+		fmt.Println("no issues found")
+		return
+	}
+
+	for _, issue := range issues {
+		fmt.Println(issue)
+	}
+	os.Exit(1)
 }
