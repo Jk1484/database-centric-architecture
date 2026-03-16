@@ -161,7 +161,7 @@ func (s *scanner) readBraceBlock() (string, error) {
 		if ch == '}' {
 			depth--
 			if depth == 0 {
-				return strings.TrimSpace(b.String()), nil
+				return b.String(), nil
 			}
 			b.WriteRune(ch)
 			continue

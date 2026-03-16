@@ -53,7 +53,7 @@ func emit(files []*parser.File) string {
 
 		// emit func init() bodies
 		for _, init := range f.Inits {
-			out.WriteString(init)
+			out.WriteString(strings.TrimSpace(dedent(init)))
 			out.WriteString("\n\n")
 		}
 
@@ -64,5 +64,35 @@ func emit(files []*parser.File) string {
 		}
 	}
 
-	return strings.TrimSpace(out.String())
+	return strings.TrimRight(out.String(), " \t\n") + "\n"
+}
+
+// dedent removes the common leading whitespace from all non-empty lines.
+func dedent(s string) string {
+	lines := strings.Split(s, "\n")
+
+	minIndent := -1
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		indent := len(line) - len(strings.TrimLeft(line, " \t"))
+		if minIndent == -1 || indent < minIndent {
+			minIndent = indent
+		}
+	}
+
+	if minIndent <= 0 {
+		return s
+	}
+
+	var result []string
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			result = append(result, "")
+		} else {
+			result = append(result, line[minIndent:])
+		}
+	}
+	return strings.Join(result, "\n")
 }
